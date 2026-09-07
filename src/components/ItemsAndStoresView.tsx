@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Warehouse, Plus, Trash2, Tag, ShieldCheck } from 'lucide-react';
+import { Package, Warehouse, Plus, Trash2, Tag, ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { AppData, ItemDef } from '../types';
 
 interface Props {
@@ -20,53 +20,75 @@ export const ItemsAndStoresView: React.FC<Props> = ({
   const [newStoreName, setNewStoreName] = useState<string>('');
   const [newItemName, setNewItemName] = useState<string>('');
   const [hasSN, setHasSN] = useState<'yes' | 'no'>('yes');
+  const [storeMsg, setStoreMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+  const [itemMsg, setItemMsg] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
 
   const handleAddStore = () => {
+    setStoreMsg(null);
     const val = newStoreName.trim();
-    if (!val) return alert('اكتب اسم المخزن أولاً');
-    if (data.stores.includes(val)) return alert('هذا المخزن موجود مسبقاً');
+    if (!val) {
+      setStoreMsg({ text: 'يرجى كتابة اسم المخزن أولاً', type: 'error' });
+      return;
+    }
+    if (data.stores.includes(val)) {
+      setStoreMsg({ text: 'هذا المخزن موجود مسبقاً', type: 'error' });
+      return;
+    }
     onAddStore(val);
     setNewStoreName('');
+    setStoreMsg({ text: `تمت إضافة المخزن "${val}" بنجاح`, type: 'success' });
+    setTimeout(() => setStoreMsg(null), 4000);
   };
 
   const handleAddItem = () => {
+    setItemMsg(null);
     const val = newItemName.trim();
-    if (!val) return alert('اكتب اسم الصنف أو الجهاز أولاً');
-    if (data.items.some((i) => i.name === val)) return alert('هذا الصنف معرف مسبقاً');
+    if (!val) {
+      setItemMsg({ text: 'يرجى كتابة اسم الصنف أو الجهاز أولاً', type: 'error' });
+      return;
+    }
+    if (data.items.some((i) => i.name.toLowerCase() === val.toLowerCase())) {
+      setItemMsg({ text: 'هذا الصنف معرف مسبقاً في النظام', type: 'error' });
+      return;
+    }
     onAddItem({ name: val, hasSN });
     setNewItemName('');
+    setItemMsg({ text: `تم تعريف الصنف "${val}" بنجاح`, type: 'success' });
+    setTimeout(() => setItemMsg(null), 4000);
   };
 
   const handleRemoveStore = (index: number) => {
+    setStoreMsg(null);
     const store = data.stores[index];
     if (store === 'مخزن التالف') {
-      alert('مخزن التالف أساسي في النظام لاستقبال التالف المرتجع ولا يمكن حذفه.');
+      setStoreMsg({ text: 'مخزن التالف أساسي في النظام لاستقبال التالف المرتجع ولا يمكن حذفه.', type: 'error' });
       return;
     }
     if (data.stores.length <= 1) {
-      alert('لا يمكن حذف آخر مخزن في النظام.');
+      setStoreMsg({ text: 'لا يمكن حذف آخر مخزن في النظام.', type: 'error' });
       return;
     }
     const isUsed = data.logs.some((l) => l.store === store || l.toStore === store);
     if (isUsed) {
-      alert('لا يمكن حذف هذا المخزن لأنه مرتبط بعمليات مسجلة سابقة. يمكنك تركه محفوظاً للأرشيف.');
+      setStoreMsg({ text: 'لا يمكن حذف هذا المخزن لأنه مرتبط بعمليات مسجلة سابقة.', type: 'error' });
       return;
     }
-    if (confirm(`هل تريد حذف المخزن "${store}"؟`)) {
-      onRemoveStore(index);
-    }
+    onRemoveStore(index);
+    setStoreMsg({ text: `تم حذف المخزن "${store}" بنجاح`, type: 'success' });
+    setTimeout(() => setStoreMsg(null), 4000);
   };
 
   const handleRemoveItem = (index: number) => {
+    setItemMsg(null);
     const item = data.items[index];
     const isUsed = data.logs.some((l) => l.item === item.name);
     if (isUsed) {
-      alert('لا يمكن حذف هذا الصنف لأنه مرتبط بعمليات مسجلة سابقة. يمكنك تركه محفوظاً للأرشيف.');
+      setItemMsg({ text: 'لا يمكن حذف هذا الصنف لأنه مرتبط بعمليات مسجلة سابقة.', type: 'error' });
       return;
     }
-    if (confirm(`هل تريد حذف الصنف "${item.name}"؟`)) {
-      onRemoveItem(index);
-    }
+    onRemoveItem(index);
+    setItemMsg({ text: `تم حذف الصنف "${item.name}" بنجاح`, type: 'success' });
+    setTimeout(() => setItemMsg(null), 4000);
   };
 
   return (
@@ -78,6 +100,23 @@ export const ItemsAndStoresView: React.FC<Props> = ({
           <Warehouse className="w-5 h-5 text-blue-600" />
           <h3 className="font-bold text-slate-900 text-base sm:text-lg">إدارة المخازن والمستودعات</h3>
         </div>
+
+        {storeMsg && (
+          <div
+            className={`p-2.5 rounded-lg text-xs font-bold flex items-center gap-2 ${
+              storeMsg.type === 'error'
+                ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            {storeMsg.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            )}
+            <span>{storeMsg.text}</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <input
@@ -147,12 +186,30 @@ export const ItemsAndStoresView: React.FC<Props> = ({
           <h3 className="font-bold text-slate-900 text-base sm:text-lg">إدارة وتعريف الأصناف</h3>
         </div>
 
+        {itemMsg && (
+          <div
+            className={`p-2.5 rounded-lg text-xs font-bold flex items-center gap-2 ${
+              itemMsg.type === 'error'
+                ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            {itemMsg.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            ) : (
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            )}
+            <span>{itemMsg.text}</span>
+          </div>
+        )}
+
         <div className="space-y-2">
           <input
             type="text"
             placeholder="اسم الجهاز أو الصنف الجديد..."
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
             className="w-full p-2 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
           />
           <div className="flex items-center gap-2">

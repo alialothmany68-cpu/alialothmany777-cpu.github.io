@@ -1,0 +1,6 @@
+{
+  "name": "نظام إدارة العهد والمخازن",
+  "description": "تطبيق متكامل لإدارة العهد والمخازن وحركات التوريد والصرف مع الحفظ الدائم في ذاكرة الهاتف وتصدير التقارير والأوامر.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
